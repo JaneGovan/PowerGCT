@@ -778,34 +778,30 @@ def collate_fn(data, max_len=None):
     return X, targets, padding_masks
 
 
-if __name__ == '__main__':
-    # cfg_filepath = "D:\\TS-Classification\\data\\tmk\\2014年05月26日11时40分02秒【草坝变】.cfg"
-    # dat_filepath = "D:\\TS-Classification\\data\\tmk\\2014年05月26日11时40分02秒【草坝变】.dat"
-    cfg_filepath = "data\\tmk\\2003年08月05日12时18分09秒.CFG"
-    dat_filepath = "data\\tmk\\2003年08月05日12时18分09秒.DAT"
-    power_data = PowerData(cfg_filepath, dat_filepath)
-    # print(power_data.get_rec().hdr)
-    u_channels = power_data.get_voltage_channels()
-    i_channels = power_data.get_current_channels()
-    print("所有母线电压通道：", u_channels)
-    print("所有线路电流通道：", i_channels)
-    if power_data.get_hdr_file_path():
-        u_channel = power_data.get_valid_voltage_channel_by_self()
-        i_channel = power_data.get_valid_current_channel_by_hdr()
-        print("HDR有效母线电压通道：", u_channel)
-        print("HDR有效电流通道：", i_channel)
-    else:
-        u_channel = power_data.get_valid_voltage_channel()
-        i_channel = power_data.get_valid_current_channel()
-        print("TMK有效母线电压通道：", u_channel)
-        print("TMK有效电流通道：", i_channel)
-    # power_data.dat_reader(is_save=True)
-    # print(power_data.get_info_fault_point_by_hdr())c
-    # print(check_total_data("data\\100"))
-    # power_data.draw_analog_channel(u_channel, i_channel)
-    # pic = [power_data.draw_analog_channel(u_channel, i_channels[i]) for i in range(len(i_channels))]
-    # print(generate_dataset_by_tmk('E:\\electrol\\data\\tmk'))
-    # print(split_dataset('D:\\TS-Classification\\all_dataset\\class_8', (0.7, 0.1, 0.2)))
-    # fix_dataset('./all_dataset/class_8/c')
-    # print(split_dataset('D:\\TS-Classification\\dataset\\all', (0.7, 0.1, 0.2)))
-    # view_all_data('./dataset/test', './view_test')
+def del_identification(data_dir_path):
+    new_headers = ['Ua', 'Ub', 'Uc', '3U0', 'Ia', 'Ib', 'Ic', '3I0']
+    for root, dirs, files in os.walk(data_dir_path):
+        for file in files:
+            ext = os.path.splitext(file)[-1].upper()
+            if ext == '.CSV':
+                file_name = os.path.splitext(file)[0]
+                # print(file_name)
+                info_list = file_name.split('_')
+                new_file_name = '_'.join(['power', info_list[-3], info_list[-2], info_list[-1]])
+                # print(new_file_name)
+                file_path = os.path.join(root, file)
+                new_file_path = os.path.join(root, new_file_name + '.csv')
+                # print(new_file_path)
+                df = pd.read_csv(file_path)
+                if len(df.columns) != 8:
+                    raise ValueError(f"文件列数不是8列，实际有{len(df.columns)}列")
+                # print(df.columns)
+                df.columns = new_headers
+                # print(df.columns)
+                try:
+                    df.to_csv(new_file_path, index=False)
+                    os.remove(file_path)
+                except Exception as e:
+                    print(f"处理文件时出错: {e}")
+                    return None
+                print(f'{file_name} -> {new_file_name}')
